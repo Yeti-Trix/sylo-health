@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sylo.local/sylo-health/widgets/log-meal-confirm/schemas/input.json",
+  "title": "LogMealConfirmInput",
+  "type": "object",
+  "required": ["description", "items"],
+  "properties": {
+    "description": { "type": "string" },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "calories", "protein_g", "carbs_g", "fat_g"],
+        "properties": {
+          "name": { "type": "string" },
+          "serving": { "type": "string" },
+          "calories": { "type": "number" },
+          "protein_g": { "type": "number" },
+          "carbs_g": { "type": "number" },
+          "fat_g": { "type": "number" }
+        }
+      }
+    },
+    "source": {
+      "type": "string",
+      "enum": ["operator_text", "operator_photo", "agent_estimate"]
+    },
+    "lookup_note": { "type": "string" },
+    "warn_guess": { "type": "boolean" },
+    "notes": { "type": "string" },
+    "calories": { "type": "number" },
+    "protein_g": { "type": "number" },
+    "carbs_g": { "type": "number" },
+    "fat_g": { "type": "number" }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sylo.local/sylo-health/widgets/log-meal-confirm/schemas/output.json",
+  "title": "LogMealConfirmOutput",
+  "type": "object",
+  "required": ["action"],
+  "properties": {
+    "action": { "type": "string", "enum": ["confirm", "cancel"] },
+    "description": { "type": "string" },
+    "items": { "type": "array" },
+    "source": { "type": "string" },
+    "notes": { "type": "string" },
+    "calories": { "type": "number" },
+    "protein_g": { "type": "number" },
+    "carbs_g": { "type": "number" },
+    "fat_g": { "type": "number" }
+  },
+  "additionalProperties": true
+}

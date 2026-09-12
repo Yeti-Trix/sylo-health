@@ -1,0 +1,64 @@
+{
+  "name": "sylo-health",
+  "version": "0.3.0",
+  "description": "Health tools for the Sylo desktop app — nutrition, workouts, vitals, and Garmin Connect sync. Ships a Sylo-only host plugin (Settings card, companion tabs) that is inert on vanilla Pi.",
+  "type": "module",
+  "private": true,
+  "keywords": [
+    "pi-package"
+  ],
+  "files": [
+    "host",
+    "host-src",
+    "extensions",
+    "shared",
+    "skills",
+    "scripts",
+    "ui/src",
+    "README.md",
+    "README-health.md",
+    "TEST_PROMPTS-health.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build:host": "esbuild host-src/index.ts --bundle --platform=node --format=esm --external:electron --outfile=host/index.js",
+    "build:ui": "vite build --config ui/vite.config.ts && node scripts/postbuild-ui.mjs",
+    "test:host": "node --test --experimental-strip-types host-src/*.test.ts",
+    "test:health": "npm run test:tdee && npm run test:date-range && npm run test:store",
+    "test:tdee": "esbuild shared/tdee.test.mjs --bundle --platform=node --format=esm --outfile=out/tdee.test.mjs --packages=external && node --test out/tdee.test.mjs",
+    "test:date-range": "esbuild shared/date-range.test.mjs --bundle --platform=node --format=esm --outfile=out/date-range.test.mjs --packages=external && node --test out/date-range.test.mjs",
+    "test:store": "esbuild shared/health-store.test.mjs --bundle --platform=node --format=esm --outfile=out/health-store.test.mjs --packages=external && node --test out/health-store.test.mjs",
+    "test": "npm run test:host && npm run test:health"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/health/index.ts"
+    ],
+    "skills": [
+      "./skills/nutrition",
+      "./skills/workouts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.84.2"
+  },
+  "dependencies": {
+    "linkedom": "^0.18.12",
+    "typebox": "^1.1.24"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "esbuild": "^0.25.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.4",
+    "vite": "^6.3.5"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yeti-Trix/sylo-health.git"
+  }
+}

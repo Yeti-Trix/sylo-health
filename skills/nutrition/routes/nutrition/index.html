@@ -1,0 +1,137 @@
+<p class="sylo-surface-lead">Nutrition</p>
+<p class="sylo-surface-muted" id="hint">Loading…</p>
+
+<section id="summary" class="sylo-panel" hidden>
+  <div class="sylo-stat-row">
+    <div class="sylo-stat">
+      <span class="sylo-stat-label">Eaten</span>
+      <span class="sylo-stat-value" id="eaten">—</span>
+    </div>
+    <div class="sylo-stat">
+      <span class="sylo-stat-label">Target</span>
+      <span class="sylo-stat-value" id="target">—</span>
+    </div>
+    <div class="sylo-stat sylo-stat-accent">
+      <span class="sylo-stat-label">Remaining</span>
+      <span class="sylo-stat-value" id="remaining">—</span>
+    </div>
+  </div>
+  <p class="sylo-surface-muted" id="macros">—</p>
+</section>
+
+<section id="log" class="sylo-panel" hidden>
+  <h3 class="sylo-surface-muted">Today's log</h3>
+  <div id="log-list"></div>
+</section>
+
+<style>
+  .sylo-panel { margin-top: 0.75rem; }
+  .sylo-stat-row { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0.5rem 0; }
+  .sylo-stat { min-width: 6rem; }
+  .sylo-stat-label { display: block; font-size: 0.8rem; opacity: 0.75; }
+  .sylo-stat-value { font-size: 1.35rem; font-weight: 600; }
+  .sylo-stat-accent .sylo-stat-value { color: var(--sylo-accent, #6ee7b7); }
+  .sylo-entry { border: 1px solid var(--sylo-border, #333); border-radius: 6px; padding: 0.5rem 0.65rem; margin: 0.4rem 0; }
+  .sylo-entry h4 { margin: 0 0 0.25rem; font-size: 0.95rem; }
+</style>
+
+<script>
+  ;(function () {
+    function rpc(op, payload) {
+      return new Promise(function (resolve, reject) {
+        var reqId = 'r-' + Math.random().toString(36).slice(2) + Date.now().toString(36)
+        function onMsg(ev) {
+          var d = ev.data
+          if (!d || d.kind !== 'sylo-skill-bridge-reply' || d.reqId !== reqId) return
+          window.removeEventListener('message', onMsg)
+          if (d.ok) resolve(d.result)
+          else reject(new Error(d.error || 'bridge_error'))
+        }
+        window.addEventListener('message', onMsg)
+        window.parent.postMessage(
+          {
+            v: 1,
+            kind: 'sylo-skill-bridge',
+            nonce: window.__SYLO_NONCE__,
+            reqId: reqId,
+            op: op,
+            payload: payload === undefined ? {} : payload,
+          },
+          '*',
+        )
+      })
+    }
+
+    var hint = document.getElementById('hint')
+    var summary = document.getElementById('summary')
+    var logSec = document.getElementById('log')
+
+    if (!window.__SYLO_NONCE__) {
+      hint.textContent = 'Bridge not ready.'
+      return
+    }
+
+    Promise.all([rpc('healthProfileGet', {}), rpc('healthDailySummary', {}), rpc('healthLogList', { limit: 50 })])
+      .then(function (results) {
+        var profile = results[0]
+        var daily = results[1]
+        var entries = results[2] || []
+
+        if (!profile) {
+          hint.textContent =
+            'No profile yet. Tell the agent your height, weight, age, activity, and target weight to get started.'
+          return
+        }
+
+        hint.textContent = 'Log meals in chat (text or photo). Phase 3 adds charts.'
+        summary.hidden = false
+        logSec.hidden = false
+
+        if (daily) {
+          document.getElementById('eaten').textContent = daily.consumed.calories + ' kcal'
+          document.getElementById('target').textContent = daily.targets.calories + ' kcal'
+          document.getElementById('remaining').textContent = daily.remaining.calories + ' kcal'
+          document.getElementById('macros').textContent =
+            'P ' +
+            daily.consumed.protein_g +
+            '/' +
+            daily.targets.protein_g +
+            'g · C ' +
+            daily.consumed.carbs_g +
+            '/' +
+            daily.targets.carbs_g +
+            'g · F ' +
+            daily.consumed.fat_g +
+            '/' +
+            daily.targets.fat_g +
+            'g'
+        }
+
+        var list = document.getElementById('log-list')
+        if (!entries.length) {
+          list.innerHTML = '<p class="sylo-surface-muted">Nothing logged today.</p>'
+          return
+        }
+        list.innerHTML = entries
+          .map(function (e) {
+            return (
+              '<article class="sylo-entry"><h4>' +
+              e.description +
+              '</h4><p class="sylo-surface-muted">' +
+              e.calories +
+              ' kcal · P' +
+              e.protein_g +
+              ' C' +
+              e.carbs_g +
+              ' F' +
+              e.fat_g +
+              '</p></article>'
+            )
+          })
+          .join('')
+      })
+      .catch(function (err) {
+        hint.textContent = 'Could not load nutrition data: ' + (err && err.message ? err.message : String(err))
+      })
+  })()
+</script>

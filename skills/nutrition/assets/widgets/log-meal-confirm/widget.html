@@ -1,0 +1,195 @@
+<p class="sylo-surface-lead">Confirm meal log</p>
+<p class="sylo-surface-muted" id="subtitle">Review items and macros before saving.</p>
+
+<div id="warn" class="sylo-warn" hidden></div>
+<div id="lookup" class="sylo-surface-muted sylo-lookup" hidden></div>
+
+<section class="sylo-surface-card" id="meal-card">
+  <h3 class="sylo-meal-title" id="meal-title">—</h3>
+  <div id="items"></div>
+  <p class="sylo-totals" id="totals">—</p>
+</section>
+
+<div class="sylo-surface-row sylo-actions">
+  <button type="button" class="sylo-surface-btn" id="btn-confirm">Save meal</button>
+  <button type="button" class="sylo-surface-btn-ghost" id="btn-cancel">Cancel</button>
+</div>
+
+<style>
+  .sylo-warn {
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid rgb(251 191 36 / 0.45);
+    background: rgb(251 191 36 / 0.12);
+    color: var(--color-text, #e8e9ec);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .sylo-lookup {
+    margin: 0 0 10px;
+    font-size: 12px;
+  }
+  .sylo-meal-title {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .sylo-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border, #3d3f45);
+    font-size: 13px;
+  }
+  .sylo-item:last-child {
+    border-bottom: none;
+  }
+  .sylo-item-name {
+    font-weight: 500;
+  }
+  .sylo-item-serving {
+    opacity: 0.8;
+    font-size: 12px;
+  }
+  .sylo-item-macros {
+    text-align: right;
+    white-space: nowrap;
+    font-size: 12px;
+    opacity: 0.9;
+  }
+  .sylo-totals {
+    margin: 10px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-accent, #6ee7b7);
+  }
+  .sylo-actions {
+    margin-top: 12px;
+  }
+</style>
+
+<script>
+  ;(function () {
+    function num(v, fallback) {
+      var n = Number(v)
+      return Number.isFinite(n) ? n : fallback
+    }
+
+    function sumItems(items, key) {
+      var t = 0
+      for (var i = 0; i < items.length; i++) t += num(items[i][key], 0)
+      return t
+    }
+
+    function bridgeSend(payload) {
+      window.parent.postMessage(
+        {
+          v: 1,
+          kind: 'sylo-widget-bridge',
+          nonce: window.__SYLO_NONCE__,
+          op: 'sendToAgent',
+          payload: payload,
+        },
+        '*',
+      )
+    }
+
+    var data = window.__WIDGET_DATA__ || {}
+    var items = Array.isArray(data.items) ? data.items : []
+    var description = typeof data.description === 'string' ? data.description.trim() : 'Meal'
+
+    if (!window.__SYLO_NONCE__) {
+      document.getElementById('subtitle').textContent = 'Bridge not ready.'
+      return
+    }
+
+    if (!items.length) {
+      document.getElementById('subtitle').textContent = 'No items to confirm.'
+      document.getElementById('meal-card').hidden = true
+      document.querySelector('.sylo-actions').hidden = true
+      return
+    }
+
+    document.getElementById('meal-title').textContent = description
+
+    if (data.warn_guess) {
+      var warn = document.getElementById('warn')
+      warn.hidden = false
+      warn.textContent =
+        'Macros are a model estimate (no web lookup). Numbers may be inaccurate — adjust in chat if needed.'
+    }
+
+    if (typeof data.lookup_note === 'string' && data.lookup_note.trim()) {
+      var lookup = document.getElementById('lookup')
+      lookup.hidden = false
+      lookup.textContent = 'Source: ' + data.lookup_note.trim()
+    }
+
+    var totals = {
+      calories: num(data.calories, sumItems(items, 'calories')),
+      protein_g: num(data.protein_g, sumItems(items, 'protein_g')),
+      carbs_g: num(data.carbs_g, sumItems(items, 'carbs_g')),
+      fat_g: num(data.fat_g, sumItems(items, 'fat_g')),
+    }
+
+    document.getElementById('items').innerHTML = items
+      .map(function (it) {
+        var serving =
+          typeof it.serving === 'string' && it.serving.trim()
+            ? '<div class="sylo-item-serving">' + it.serving + '</div>'
+            : ''
+        return (
+          '<div class="sylo-item"><div><div class="sylo-item-name">' +
+          (it.name || 'Item') +
+          '</div>' +
+          serving +
+          '</div><div class="sylo-item-macros">' +
+          num(it.calories, 0) +
+          ' kcal · P' +
+          num(it.protein_g, 0) +
+          ' C' +
+          num(it.carbs_g, 0) +
+          ' F' +
+          num(it.fat_g, 0) +
+          '</div></div>'
+        )
+      })
+      .join('')
+
+    document.getElementById('totals').textContent =
+      'Total: ' +
+      totals.calories +
+      ' kcal · P ' +
+      totals.protein_g +
+      'g · C ' +
+      totals.carbs_g +
+      'g · F ' +
+      totals.fat_g +
+      'g'
+
+    var source =
+      data.source === 'operator_text' || data.source === 'operator_photo' || data.source === 'agent_estimate'
+        ? data.source
+        : 'agent_estimate'
+
+    document.getElementById('btn-confirm').addEventListener('click', function () {
+      bridgeSend({
+        action: 'confirm',
+        description: description,
+        items: items,
+        source: source,
+        notes: typeof data.notes === 'string' ? data.notes : undefined,
+        calories: totals.calories,
+        protein_g: totals.protein_g,
+        carbs_g: totals.carbs_g,
+        fat_g: totals.fat_g,
+      })
+    })
+
+    document.getElementById('btn-cancel').addEventListener('click', function () {
+      bridgeSend({ action: 'cancel' })
+    })
+  })()
+</script>

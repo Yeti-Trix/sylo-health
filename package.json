@@ -3,7 +3,6 @@
   "version": "0.3.0",
   "description": "Health tools for the Sylo desktop app — nutrition, workouts, vitals, and Garmin Connect sync. Ships a Sylo-only host plugin (Settings card, companion tabs) that is inert on vanilla Pi.",
   "type": "module",
-  "private": true,
   "keywords": [
     "pi-package"
   ],

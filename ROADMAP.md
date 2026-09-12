@@ -1,7 +1,7 @@
 # sylo-health — Body‑comp tracker + repo rename (roadmap)
 
 > Plan doc for this bundle. **Target name: `sylo-health`.**
-> Owner: Spencer + agent. Status: **planning** (2026‑09‑12).
+> Owner: Spencer + agent. Status: **WP1 complete** (2026‑09‑12 — renamed, public, npm-ready).
 > The rename + body‑comp build are work packages — the GitHub/folder half of the rename
 > is **gated on operator approval** (cross‑machine URL change).
 
@@ -125,7 +125,7 @@ muscle / visceral over time. Data layer ships first.
 
 1. **Now:** enable **RENPHO → Samsung Health** (stop the photos; body comp lands somewhere).
 2. **Now (this turn):** description/README scrub of news/reddit (done) + this roadmap.
-3. **On your go:** Work Package 1 rename (in‑repo first; GitHub/folder/loader when approved).
+3. **DONE:** Work Package 1 rename — GitHub renamed, folder moved, loader + settings updated, repo public, fresh history, publish workflow in place. First npm publish pending (operator, OTP).
 4. **Next:** body‑comp data layer + tools (Work Package 2) with the feed source matching
    the scale you pick.
 5. **Then:** Vitals‑tab body‑comp charts (host repo).
